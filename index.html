@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AutoPulse — AI That Runs Your Business</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cabinet+Grotesk:wght@300;400;500;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #060608; --surface: #0e0e14; --surface2: #16161f; --border: #1e1e2e;
+      --electric: #00f5a0; --electric2: #00d9f5; --orange: #ff6b35; --pink: #f72585;
+      --text: #f0f0f5; --muted: #6b6b8a; --card: #0d0d15;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Cabinet Grotesk', sans-serif; background: var(--bg); color: var(--text); overflow-x: hidden; }
+    body::before {
+      content: ''; position: fixed; inset: 0;
+      background-image: linear-gradient(rgba(0,245,160,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,245,160,0.03) 1px, transparent 1px);
+      background-size: 60px 60px; pointer-events: none; z-index: 0;
+    }
+    .orb { position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0; }
+    .orb1 { width: 500px; height: 500px; background: rgba(0,245,160,0.06); top: -100px; right: -100px; }
+    .orb2 { width: 400px; height: 400px; background: rgba(247,37,133,0.05); bottom: 200px; left: -100px; }
+
+    /* NAV */
+    nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between; padding: 1.2rem 3rem; background: rgba(6,6,8,0.85); backdrop-filter: blur(20px); border-bottom: 1px solid var(--border); }
+    .logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; letter-spacing: 0.05em; background: linear-gradient(135deg, var(--electric), var(--electric2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .nav-links { display: flex; align-items: center; gap: 1.5rem; }
+    .nav-links a { color: var(--muted); text-decoration: none; font-size: 0.9rem; font-weight: 500; transition: color 0.2s; cursor: pointer; }
+    .nav-links a:hover { color: var(--text); }
+    .nav-cta { background: var(--electric); color: #000; font-family: 'Cabinet Grotesk', sans-serif; font-weight: 700; font-size: 0.85rem; padding: 0.6rem 1.4rem; border-radius: 8px; border: none; cursor: pointer; transition: all 0.2s; }
+    .nav-cta:hover { background: #00ffaa; }
+
+    /* TOOL PAGES */
+    .tool-page { position: relative; z-index: 1; max-width: 800px; margin: 0 auto; padding: 6rem 2rem 3rem; }
+    .tool-page-header { margin-bottom: 2.5rem; }
+    .tool-badge { display: inline-flex; align-items: center; gap: 0.5rem; border-radius: 20px; padding: 0.3rem 0.9rem; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 1rem; }
+    .tool-page-header h1 { font-family: 'Bebas Neue', sans-serif; font-size: 3rem; letter-spacing: 0.02em; margin-bottom: 0.5rem; }
+    .tool-page-header p { color: var(--muted); line-height: 1.6; }
+    .form-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; margin-bottom: 2rem; }
+    .field-group { margin-bottom: 1.25rem; }
+    .field-label { display: block; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 0.5rem; }
+    .field-input { width: 100%; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.75rem 1rem; color: var(--text); font-family: 'Cabinet Grotesk', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
+    .field-input:focus { border-color: var(--electric); }
+    textarea.field-input { resize: vertical; min-height: 80px; }
+    .btn-generate { width: 100%; font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; letter-spacing: 0.05em; padding: 1rem; border-radius: 12px; background: linear-gradient(135deg, #ff6b35, #f72585); color: white; border: none; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 24px rgba(255,107,53,0.3); }
+    .btn-generate:hover { transform: translateY(-2px); }
+    .btn-generate:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .strategy-results { display: none; }
+    .strategy-results.show { display: block; }
+    .result-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 1.5rem; margin-bottom: 1.2rem; }
+    .result-card-title { font-family: 'Bebas Neue', sans-serif; font-size: 1rem; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 0.75rem; }
+    .result-card-content { font-size: 0.9rem; line-height: 1.7; }
+    .result-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .result-tag { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 0.4rem 0.8rem; font-size: 0.82rem; }
+    .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+    .week-item { display: flex; gap: 0.75rem; padding: 0.6rem 0; border-bottom: 1px solid var(--border); font-size: 0.88rem; }
+    .week-num { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; color: var(--electric); flex-shrink: 0; }
+    .chat-container { background: var(--card); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; }
+    .chat-header { background: var(--surface2); padding: 1.2rem 1.5rem; display: flex; align-items: center; gap: 1rem; border-bottom: 1px solid var(--border); }
+    .chat-avatar { width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, var(--electric), var(--electric2)); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+    .chat-name { font-weight: 700; font-size: 0.9rem; }
+    .chat-status { font-size: 0.75rem; color: var(--electric); }
+    .chat-messages { height: 380px; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 1rem; }
+    .chat-msg { max-width: 75%; }
+    .chat-msg.bot { align-self: flex-start; }
+    .chat-msg.user { align-self: flex-end; }
+    .chat-bubble { padding: 0.75rem 1rem; border-radius: 12px; font-size: 0.88rem; line-height: 1.5; }
+    .chat-msg.bot .chat-bubble { background: var(--surface2); color: var(--text); border-bottom-left-radius: 4px; }
+    .chat-msg.user .chat-bubble { background: var(--electric); color: #000; border-bottom-right-radius: 4px; font-weight: 500; }
+    .chat-input-row { display: flex; gap: 0.75rem; padding: 1rem 1.5rem; border-top: 1px solid var(--border); background: var(--surface); }
+    .chat-input { flex: 1; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 0.7rem 1rem; color: var(--text); font-family: 'Cabinet Grotesk', sans-serif; font-size: 0.88rem; outline: none; }
+    .chat-input:focus { border-color: var(--electric); }
+    .chat-send { background: var(--electric); color: #000; border: none; border-radius: 10px; padding: 0.7rem 1.2rem; font-weight: 700; cursor: pointer; font-family: 'Cabinet Grotesk', sans-serif; }
+    .chat-send:hover { background: #00ffaa; }
+    .business-setup { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; }
+    .business-setup h3 { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; margin-bottom: 1rem; color: var(--electric); }
+
+    /* PAGES */
+    .page { display: none; }
+    .page.active { display: block; }
+
+    /* HERO */
+    .hero { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 8rem 2rem 4rem; }
+    .hero-badge { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(0,245,160,0.08); border: 1px solid rgba(0,245,160,0.2); border-radius: 20px; padding: 0.4rem 1rem; font-size: 0.8rem; font-weight: 600; color: var(--electric); margin-bottom: 2rem; }
+    .pulse-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--electric); animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+    .hero h1 { font-family: 'Bebas Neue', sans-serif; font-size: clamp(4rem, 12vw, 9rem); line-height: 0.9; letter-spacing: 0.02em; margin-bottom: 1.5rem; }
+    .hero h1 .line2 { display: block; background: linear-gradient(135deg, var(--electric), var(--electric2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .hero-sub { font-size: clamp(1rem, 2vw, 1.2rem); color: var(--muted); max-width: 560px; line-height: 1.6; margin-bottom: 2.5rem; }
+    .hero-actions { display: flex; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+    .btn-electric { font-family: 'Cabinet Grotesk', sans-serif; font-weight: 700; font-size: 1rem; padding: 1rem 2.2rem; border-radius: 10px; background: var(--electric); color: #000; border: none; cursor: pointer; transition: all 0.2s; box-shadow: 0 0 40px rgba(0,245,160,0.3); }
+    .btn-electric:hover { background: #00ffaa; transform: translateY(-2px); }
+    .btn-ghost { font-family: 'Cabinet Grotesk', sans-serif; font-weight: 600; font-size: 1rem; padding: 1rem 2.2rem; border-radius: 10px; background: transparent; color: var(--text); border: 1px solid var(--border); cursor: pointer; transition: all 0.2s; }
+    .btn-ghost:hover { border-color: var(--electric); color: var(--electric); }
+
+    /* TICKER */
+    .ticker { position: relative; z-index: 1; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 1rem 0; overflow: hidden; background: rgba(0,245,160,0.02); }
+    .ticker-track { display: flex; gap: 3rem; animation: ticker 20s linear infinite; white-space: nowrap; }
+    .ticker-item { display: flex; align-items: center; gap: 0.6rem; font-size: 0.85rem; font-weight: 600; color: var(--muted); flex-shrink: 0; }
+    .ticker-item span { color: var(--electric); }
+    @keyframes ticker { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+
+    /* SECTION */
+    .section { position: relative; z-index: 1; padding: 6rem 3rem; }
+    .section-label { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--electric); margin-bottom: 1rem; }
+    .section-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(2.5rem, 5vw, 4rem); line-height: 1; margin-bottom: 1rem; }
+    .section-sub { color: var(--muted); max-width: 500px; line-height: 1.6; margin-bottom: 3rem; }
+
+    /* TOOLS */
+    .tools-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
+    .tool-card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 2rem; transition: all 0.3s; }
+    .tool-card:hover { transform: translateY(-3px); }
+    .tool-icon { font-size: 2rem; margin-bottom: 1rem; width: 56px; height: 56px; display: flex; align-items: center; justify-content: center; border-radius: 12px; }
+    .tool-name { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+    .tool-desc { font-size: 0.88rem; color: var(--muted); line-height: 1.6; margin-bottom: 1.2rem; }
+    .tool-features { list-style: none; }
+    .tool-features li { font-size: 0.82rem; color: var(--muted); padding: 0.3rem 0; display: flex; align-items: center; gap: 0.5rem; }
+
+    /* PRICING */
+    .pricing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; max-width: 1000px; margin: 0 auto; }
+    .price-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 2.5rem 2rem; position: relative; }
+    .price-card.featured { border-color: var(--electric); background: linear-gradient(145deg, rgba(0,245,160,0.05), var(--card)); box-shadow: 0 0 60px rgba(0,245,160,0.08); }
+    .featured-badge { position: absolute; top: -14px; left: 50%; transform: translateX(-50%); background: var(--electric); color: #000; font-size: 0.7rem; font-weight: 800; padding: 0.3rem 1rem; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.1em; white-space: nowrap; }
+    .plan-name { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
+    .plan-tagline { font-size: 0.82rem; color: var(--muted); margin-bottom: 1.5rem; }
+    .plan-price { font-family: 'Bebas Neue', sans-serif; font-size: 3.5rem; line-height: 1; margin-bottom: 0.25rem; }
+    .plan-price sup { font-size: 1.5rem; vertical-align: top; margin-top: 0.5rem; }
+    .plan-price span { font-size: 1rem; color: var(--muted); font-family: 'Cabinet Grotesk', sans-serif; font-weight: 400; }
+    .plan-period { font-size: 0.8rem; color: var(--muted); margin-bottom: 2rem; }
+    .plan-features { list-style: none; margin-bottom: 2rem; }
+    .plan-features li { display: flex; align-items: flex-start; gap: 0.75rem; font-size: 0.88rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border); color: var(--muted); }
+    .plan-features li:last-child { border-bottom: none; }
+    .check { color: var(--electric); font-weight: 700; flex-shrink: 0; }
+    .check.no { color: var(--muted); }
+    .btn-plan { width: 100%; font-family: 'Cabinet Grotesk', sans-serif; font-weight: 700; font-size: 0.95rem; padding: 0.9rem; border-radius: 10px; cursor: pointer; transition: all 0.2s; border: none; }
+    .btn-plan.primary { background: var(--electric); color: #000; }
+    .btn-plan.primary:hover { background: #00ffaa; }
+    .btn-plan.outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .btn-plan.outline:hover { border-color: var(--electric); color: var(--electric); }
+
+    /* STEPS */
+    .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem; }
+    .step { text-align: center; padding: 2rem 1.5rem; }
+    .step-num { font-family: 'Bebas Neue', sans-serif; font-size: 4rem; background: linear-gradient(135deg, var(--electric), var(--electric2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1; margin-bottom: 1rem; }
+    .step-title { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+    .step-desc { font-size: 0.88rem; color: var(--muted); line-height: 1.6; }
+
+    /* FOOTER */
+    footer { position: relative; z-index: 1; border-top: 1px solid var(--border); padding: 3rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+    .footer-logo { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; background: linear-gradient(135deg, var(--electric), var(--electric2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+    /* ===== DASHBOARD ===== */
+    .dashboard { position: relative; z-index: 1; padding: 6rem 2rem 3rem; max-width: 1000px; margin: 0 auto; }
+    .dash-header { margin-bottom: 2rem; }
+    .dash-header h1 { font-family: 'Bebas Neue', sans-serif; font-size: 2.5rem; background: linear-gradient(135deg, var(--electric), var(--electric2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .dash-header p { color: var(--muted); margin-top: 0.3rem; }
+
+    .connect-box { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 2.5rem; text-align: center; margin-bottom: 2rem; }
+    .connect-box h2 { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; margin-bottom: 0.5rem; }
+    .connect-box p { color: var(--muted); margin-bottom: 1.5rem; font-size: 0.9rem; }
+    .btn-connect { display: inline-flex; align-items: center; gap: 0.75rem; background: white; color: #333; font-family: 'Cabinet Grotesk', sans-serif; font-weight: 700; font-size: 0.95rem; padding: 0.85rem 1.8rem; border-radius: 10px; border: none; cursor: pointer; transition: all 0.2s; box-shadow: 0 2px 12px rgba(0,0,0,0.3); }
+    .btn-connect:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(0,0,0,0.4); }
+    .btn-connect img { width: 20px; height: 20px; }
+
+    .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; text-align: center; }
+    .stat-num { font-family: 'Bebas Neue', sans-serif; font-size: 2.5rem; line-height: 1; }
+    .stat-num.green { color: var(--electric); }
+    .stat-num.red { color: var(--pink); }
+    .stat-num.blue { color: var(--electric2); }
+    .stat-label { font-size: 0.8rem; color: var(--muted); margin-top: 0.3rem; }
+
+    .scan-btn { width: 100%; font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 0.05em; padding: 1.1rem; border-radius: 12px; background: linear-gradient(135deg, var(--electric), var(--electric2)); color: #000; border: none; cursor: pointer; transition: all 0.2s; margin-bottom: 2rem; box-shadow: 0 4px 30px rgba(0,245,160,0.3); }
+    .scan-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 40px rgba(0,245,160,0.4); }
+    .scan-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .log-section h3 { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 0.05em; margin-bottom: 1rem; color: var(--muted); }
+    .log-tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+    .log-tab { font-family: 'Cabinet Grotesk', sans-serif; font-size: 0.82rem; font-weight: 600; padding: 0.4rem 1rem; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; transition: all 0.2s; }
+    .log-tab.active { background: var(--surface2); color: var(--text); border-color: var(--electric); }
+    .log-item { display: flex; align-items: center; justify-content: space-between; padding: 0.9rem 1.2rem; background: var(--card); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 0.5rem; font-size: 0.85rem; }
+    .log-item.deleted { border-color: rgba(247,37,133,0.25); background: rgba(247,37,133,0.04); }
+    .log-from { color: var(--muted); font-size: 0.78rem; margin-top: 0.2rem; }
+    .log-date { color: var(--muted); font-size: 0.72rem; margin-top: 0.15rem; }
+    .log-action { font-weight: 600; white-space: nowrap; margin-left: 1rem; }
+    .connected-badge { display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(0,245,160,0.1); border: 1px solid rgba(0,245,160,0.25); border-radius: 20px; padding: 0.3rem 0.8rem; font-size: 0.78rem; color: var(--electric); font-weight: 600; margin-bottom: 1.5rem; }
+    .clear-btn { font-family: 'Cabinet Grotesk', sans-serif; font-size: 0.75rem; font-weight: 600; padding: 0.3rem 0.8rem; border-radius: 8px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer; transition: all 0.2s; float: right; }
+    .clear-btn:hover { border-color: var(--pink); color: var(--pink); }
+
+    /* MODAL */
+    .modal-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s; padding: 1rem; }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal { background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 2.5rem; width: 100%; max-width: 480px; transform: translateY(20px); transition: transform 0.3s; position: relative; }
+    .modal-overlay.open .modal { transform: translateY(0); }
+    .modal-close { position: absolute; top: 1rem; right: 1rem; background: none; border: none; color: var(--muted); font-size: 1.3rem; cursor: pointer; }
+    .modal h2 { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; margin-bottom: 0.5rem; background: linear-gradient(135deg, var(--electric), var(--electric2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .modal p { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
+    .modal-plan-badge { background: rgba(0,245,160,0.08); border: 1px solid rgba(0,245,160,0.2); border-radius: 8px; padding: 0.75rem 1rem; margin-bottom: 1.5rem; font-size: 0.85rem; }
+    .modal-plan-badge strong { color: var(--electric); }
+    .modal form { display: flex; flex-direction: column; gap: 1rem; }
+    .modal input { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 0.8rem 1rem; color: var(--text); font-family: 'Cabinet Grotesk', sans-serif; font-size: 0.9rem; outline: none; }
+    .modal input:focus { border-color: var(--electric); }
+    .modal-submit { background: var(--electric); color: #000; font-family: 'Cabinet Grotesk', sans-serif; font-weight: 700; font-size: 1rem; padding: 0.9rem; border-radius: 10px; border: none; cursor: pointer; }
+    .success-screen { text-align: center; padding: 1rem; display: none; }
+    .success-screen.show { display: block; }
+    .success-icon { font-size: 3rem; margin-bottom: 1rem; }
+    .success-screen h3 { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; color: var(--electric); margin-bottom: 0.5rem; }
+
+    @media(max-width:768px){ nav{padding:1rem 1.5rem} .nav-links a{display:none} .section{padding:4rem 1.5rem} .stats-row{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<nav>
+  <div class="logo">AutoPulse</div>
+  <div class="nav-links">
+    <a onclick="showLanding();return false;" href="#">Home</a>
+    <a onclick="showPage('brand');return false;" href="#">🎯 Brand AI</a>
+    <a onclick="showPage('chatbot');return false;" href="#">💬 Chatbot</a>
+    <a onclick="showPage('dashboard');return false;" href="#">📧 Email AI</a>
+    <button class="nav-cta" onclick="showPage('dashboard')">Dashboard →</button>
+  </div>
+</nav>
+
+<!-- ===== LANDING PAGE ===== -->
+<div class="page active" id="page-landing">
+  <section class="hero">
+    <div class="hero-badge"><div class="pulse-dot"></div> AI-Powered Business Automation</div>
+    <h1>YOUR BUSINESS<br><span class="line2">ON AUTOPILOT</span><br>24 / 7</h1>
+    <p class="hero-sub">One platform. Five AI agents. Automate your chatbot, emails, social media, brand strategy, and content — all without lifting a finger.</p>
+    <div class="hero-actions">
+      <button class="btn-electric" onclick="showDashboard()">Try It Free →</button>
+      <button class="btn-ghost" onclick="document.getElementById('tools').scrollIntoView({behavior:'smooth'})">See What's Inside</button>
+    </div>
+  </section>
+
+  <div class="ticker">
+    <div class="ticker-track">
+      <div class="ticker-item"><span>💬</span> AI Chatbot</div>
+      <div class="ticker-item"><span>📧</span> Email AI</div>
+      <div class="ticker-item"><span>🗑️</span> Scam Detector</div>
+      <div class="ticker-item"><span>↩️</span> Auto Reply</div>
+      <div class="ticker-item"><span>📱</span> Social Media</div>
+      <div class="ticker-item"><span>🎯</span> Brand Strategy</div>
+      <div class="ticker-item"><span>🎬</span> Creative Director</div>
+      <div class="ticker-item"><span>⚡</span> Fully Automated</div>
+      <div class="ticker-item"><span>💬</span> AI Chatbot</div>
+      <div class="ticker-item"><span>📧</span> Email AI</div>
+      <div class="ticker-item"><span>🗑️</span> Scam Detector</div>
+      <div class="ticker-item"><span>↩️</span> Auto Reply</div>
+      <div class="ticker-item"><span>📱</span> Social Media</div>
+      <div class="ticker-item"><span>🎯</span> Brand Strategy</div>
+      <div class="ticker-item"><span>🎬</span> Creative Director</div>
+      <div class="ticker-item"><span>⚡</span> Fully Automated</div>
+    </div>
+  </div>
+
+  <section class="section" id="tools">
+    <div class="section-label">The Toolkit</div>
+    <h2 class="section-title">5 AI Agents.<br>Infinite Leverage.</h2>
+    <p class="section-sub">Every tool works together, learning your brand and getting smarter over time.</p>
+    <div class="tools-grid">
+      <div class="tool-card" style="border-color:rgba(0,245,160,0.15)">
+        <div class="tool-icon" style="background:rgba(0,245,160,0.08);border:1px solid rgba(0,245,160,0.2)">📧</div>
+        <div class="tool-name" style="color:#00f5a0">Email AI</div>
+        <div class="tool-desc">Connects to your Gmail. Detects and deletes scams. Replies to real emails automatically. You never have to touch your inbox again.</div>
+        <ul class="tool-features">
+          <li><span style="color:#00f5a0;font-weight:700">→</span> Scam & phishing detection</li>
+          <li><span style="color:#00f5a0;font-weight:700">→</span> Auto-delete spam</li>
+          <li><span style="color:#00f5a0;font-weight:700">→</span> Smart auto-replies</li>
+          <li><span style="color:#00f5a0;font-weight:700">→</span> Filters who to reply to</li>
+        </ul>
+      </div>
+      <div class="tool-card" style="border-color:rgba(247,37,133,0.15)">
+        <div class="tool-icon" style="background:rgba(247,37,133,0.08);border:1px solid rgba(247,37,133,0.2)">📣</div>
+        <div class="tool-name" style="color:#f72585">Email Marketer</div>
+        <div class="tool-desc">Send targeted campaigns, build drip sequences, and grow your list — all on autopilot.</div>
+        <ul class="tool-features">
+          <li><span style="color:#f72585;font-weight:700">→</span> Automated drip sequences</li>
+          <li><span style="color:#f72585;font-weight:700">→</span> Audience segmentation</li>
+          <li><span style="color:#f72585;font-weight:700">→</span> AI-written email copy</li>
+        </ul>
+      </div>
+      <div class="tool-card" style="border-color:rgba(0,217,245,0.15)">
+        <div class="tool-icon" style="background:rgba(0,217,245,0.08);border:1px solid rgba(0,217,245,0.2)">📱</div>
+        <div class="tool-name" style="color:#00d9f5">Social Media</div>
+        <div class="tool-desc">Plan, write, and schedule your social content while the AI grows your following.</div>
+        <ul class="tool-features">
+          <li><span style="color:#00d9f5;font-weight:700">→</span> AI content calendar</li>
+          <li><span style="color:#00d9f5;font-weight:700">→</span> Auto captions & hashtags</li>
+          <li><span style="color:#00d9f5;font-weight:700">→</span> Grows followers automatically</li>
+        </ul>
+      </div>
+      <div class="tool-card" style="border-color:rgba(255,107,53,0.15)">
+        <div class="tool-icon" style="background:rgba(255,107,53,0.08);border:1px solid rgba(255,107,53,0.2)">🎯</div>
+        <div class="tool-name" style="color:#ff6b35">Brand Strategist</div>
+        <div class="tool-desc">Define your voice, crush competitors, and build a brand that actually resonates.</div>
+        <ul class="tool-features">
+          <li><span style="color:#ff6b35;font-weight:700">→</span> Brand voice & guidelines</li>
+          <li><span style="color:#ff6b35;font-weight:700">→</span> Competitor analysis</li>
+          <li><span style="color:#ff6b35;font-weight:700">→</span> Audience targeting</li>
+        </ul>
+      </div>
+      <div class="tool-card" style="border-color:rgba(167,139,250,0.15)">
+        <div class="tool-icon" style="background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2)">🎬</div>
+        <div class="tool-name" style="color:#a78bfa">Creative Director</div>
+        <div class="tool-desc">Analyze what content performs, plan what to make next, and never run out of ideas.</div>
+        <ul class="tool-features">
+          <li><span style="color:#a78bfa;font-weight:700">→</span> Video performance analysis</li>
+          <li><span style="color:#a78bfa;font-weight:700">→</span> Content strategy planning</li>
+          <li><span style="color:#a78bfa;font-weight:700">→</span> Hook & script suggestions</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="how" style="background:rgba(0,245,160,0.02);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
+    <div style="text-align:center;margin-bottom:3rem">
+      <div class="section-label" style="display:block">How It Works</div>
+      <h2 class="section-title">Up & Running in 3 Steps</h2>
+    </div>
+    <div class="steps">
+      <div class="step"><div class="step-num">01</div><div class="step-title">Pick Your Plan</div><div class="step-desc">Choose the tools you need. Start small or go all-in.</div></div>
+      <div class="step"><div class="step-num">02</div><div class="step-title">Connect Your Brand</div><div class="step-desc">Connect your Gmail, social accounts, and website in seconds.</div></div>
+      <div class="step"><div class="step-num">03</div><div class="step-title">Watch It Work</div><div class="step-desc">Your AI agents go to work immediately. Check your dashboard anytime.</div></div>
+    </div>
+  </section>
+
+  <section class="section" id="pricing">
+    <div style="text-align:center;margin-bottom:3rem">
+      <div class="section-label" style="display:block">Pricing</div>
+      <h2 class="section-title">Simple. Transparent.<br>No Surprises.</h2>
+    </div>
+    <div class="pricing-grid">
+      <div class="price-card">
+        <div class="plan-name">Starter</div>
+        <div class="plan-tagline">Perfect for solo entrepreneurs</div>
+        <div class="plan-price"><sup>$</sup>29<span>/mo</span></div>
+        <div class="plan-period">Billed monthly · Cancel anytime</div>
+        <ul class="plan-features">
+          <li><span class="check">✓</span> Email AI (scam detection + auto-reply)</li>
+          <li><span class="check">✓</span> Email Marketer (1,000 contacts)</li>
+          <li><span class="check">✓</span> Social Media (2 platforms)</li>
+          <li><span class="check no">✗</span> Brand Strategist</li>
+          <li><span class="check no">✗</span> Creative Director</li>
+        </ul>
+        <button class="btn-plan outline" onclick="openModal('Starter — $29/mo')">Get Started</button>
+      </div>
+      <div class="price-card featured">
+        <div class="featured-badge">⚡ Most Popular</div>
+        <div class="plan-name" style="color:var(--electric)">Growth</div>
+        <div class="plan-tagline">For growing businesses</div>
+        <div class="plan-price"><sup>$</sup>79<span>/mo</span></div>
+        <div class="plan-period">Billed monthly · Cancel anytime</div>
+        <ul class="plan-features">
+          <li><span class="check">✓</span> Email AI (all features)</li>
+          <li><span class="check">✓</span> Email Marketer (10,000 contacts)</li>
+          <li><span class="check">✓</span> Social Media (5 platforms)</li>
+          <li><span class="check">✓</span> Brand Strategist</li>
+          <li><span class="check">✓</span> Creative Director</li>
+        </ul>
+        <button class="btn-plan primary" onclick="openModal('Growth — $79/mo')">Get Started</button>
+      </div>
+      <div class="price-card">
+        <div class="plan-name">Agency</div>
+        <div class="plan-tagline">For teams & agencies</div>
+        <div class="plan-price"><sup>$</sup>199<span>/mo</span></div>
+        <div class="plan-period">Billed monthly · Cancel anytime</div>
+        <ul class="plan-features">
+          <li><span class="check">✓</span> Everything in Growth</li>
+          <li><span class="check">✓</span> Up to 10 client accounts</li>
+          <li><span class="check">✓</span> Unlimited contacts</li>
+          <li><span class="check">✓</span> White-label dashboard</li>
+          <li><span class="check">✓</span> Dedicated account manager</li>
+        </ul>
+        <button class="btn-plan outline" onclick="openModal('Agency — $199/mo')">Get Started</button>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-logo">AutoPulse</div>
+    <div style="font-size:0.82rem;color:var(--muted)">© 2026 AutoPulse. All rights reserved.</div>
+    <div style="font-size:0.82rem;color:var(--muted)">AI that works while you sleep. ⚡</div>
+  </footer>
+</div>
+
+<!-- ===== DASHBOARD ===== -->
+<div class="page" id="page-dashboard">
+  <div class="dashboard">
+    <div class="dash-header">
+      <h1>Email AI Dashboard</h1>
+      <p>Connect your Gmail and let AutoPulse handle your inbox automatically.</p>
+    </div>
+
+    <!-- NOT CONNECTED -->
+    <div id="view-connect">
+      <div class="connect-box">
+        <h2>Connect Your Gmail</h2>
+        <p>Click below to give AutoPulse access to your inbox. Google will ask for your permission — it's safe and you can disconnect anytime.</p>
+        <button class="btn-connect" onclick="connectGmail()">
+          <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 5C13.5 5 5 13.5 5 24s8.5 19 19 19 19-8.5 19-19S34.5 5 24 5z"/><path fill="#FBBC05" d="M6.3 14.7l7.9 5.8C16 17 19.7 14.5 24 14.5c3.1 0 5.9 1.1 8.1 2.9l6-6C34.6 8.3 29.6 6 24 6c-7.2 0-13.4 3.8-16.7 9.5-.3-.6-.7-1.2-1-1.8z"/><path fill="#4285F4" d="M24 42c5.4 0 10.3-2 14-5.2l-6.5-5.5C29.4 33.1 26.8 34 24 34c-5.2 0-9.7-3.5-11.3-8.3l-7.9 6.1C8.2 38 15.6 42 24 42z"/><path fill="#34A853" d="M42.5 20H24v8h10.6C33.5 31.5 29 34 24 34c-5.2 0-9.7-3.5-11.3-8.3l-7.9 6.1C8.2 38 15.6 42 24 42c10.8 0 19.4-8.6 19.4-19.4 0-1-.1-1.8-.3-2.6z"/></svg>
+          Connect Gmail
+        </button>
+        <p style="font-size:0.75rem;color:var(--muted);margin-top:1rem;margin-bottom:0">🔒 We never store your password. You can disconnect anytime from Google settings.</p>
+      </div>
+    </div>
+
+    <!-- CONNECTED -->
+    <div id="view-connected" style="display:none">
+      <div class="connected-badge">
+        <div class="pulse-dot"></div> Gmail Connected
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-num green" id="stat-scanned">0</div>
+          <div class="stat-label">Emails Scanned</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num red" id="stat-deleted">0</div>
+          <div class="stat-label">Scams Deleted</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num blue" id="stat-replied">0</div>
+          <div class="stat-label">Auto-Replied</div>
+        </div>
+      </div>
+
+      <button class="scan-btn" id="scan-btn" onclick="scanEmails()">⚡ SCAN MY INBOX NOW</button>
+
+      <div class="log-section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+          <h3 style="margin-bottom:0">Activity Log</h3>
+          <div class="log-tabs">
+            <button class="log-tab active" onclick="switchLogTab('session')">This Session</button>
+            <button class="log-tab" onclick="switchLogTab('deleted')">🗑️ Deleted History</button>
+          </div>
+        </div>
+
+        <div id="log-session">
+          <div id="activity-log">
+            <div style="text-align:center;padding:2rem;color:var(--muted);font-size:0.9rem">Click "Scan My Inbox" to start scanning your emails.</div>
+          </div>
+        </div>
+
+        <div id="log-deleted" style="display:none">
+          <div style="display:flex;justify-content:flex-end;margin-bottom:0.75rem">
+            <button class="clear-btn" onclick="clearDeletedHistory()">Clear History</button>
+          </div>
+          <div id="deleted-log"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== BRAND STRATEGIST PAGE ===== -->
+<div class="page" id="page-brand">
+  <div class="tool-page">
+    <div class="tool-page-header">
+      <div class="tool-badge" style="background:rgba(255,107,53,0.1);color:#ff6b35;border:1px solid rgba(255,107,53,0.25)">🎯 Brand Strategist</div>
+      <h1>Build Your Brand Strategy</h1>
+      <p>Tell the AI about your business and get a complete marketing strategy in seconds — brand voice, taglines, target audience, and a 30-day action plan.</p>
+    </div>
+    <div class="form-card">
+      <div class="field-group">
+        <label class="field-label">What is your business? *</label>
+        <textarea class="field-input" id="bs-business" placeholder="e.g. I run a hair salon in Miami that specializes in natural hair care for Black women"></textarea>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Who are your ideal customers? *</label>
+        <input class="field-input" id="bs-customers" type="text" placeholder="e.g. Women aged 25-45 who want healthy natural hair"/>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Who are your main competitors?</label>
+        <input class="field-input" id="bs-competitors" type="text" placeholder="e.g. Other local salons, YouTube tutorials, DIY products"/>
+      </div>
+      <div class="field-group">
+        <label class="field-label">What makes YOU different?</label>
+        <input class="field-input" id="bs-difference" type="text" placeholder="e.g. 15 years experience, all natural products, mobile service"/>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Your main goal right now?</label>
+        <input class="field-input" id="bs-goal" type="text" placeholder="e.g. Get 20 new clients this month"/>
+      </div>
+      <button class="btn-generate" id="bs-btn" onclick="generateStrategy()">🎯 Generate My Brand Strategy</button>
+    </div>
+
+    <div class="strategy-results" id="strategy-results">
+      <div class="result-card" style="border-color:rgba(0,245,160,0.2)">
+        <div class="result-card-title">🎤 Your Brand Voice</div>
+        <div class="result-card-content" id="res-voice"></div>
+      </div>
+      <div class="result-grid">
+        <div class="result-card">
+          <div class="result-card-title">⚡ Tagline Ideas</div>
+          <div id="res-taglines" class="result-tags"></div>
+        </div>
+        <div class="result-card">
+          <div class="result-card-title">🎯 Your Target Audience</div>
+          <div class="result-card-content" id="res-audience"></div>
+        </div>
+      </div>
+      <div class="result-card">
+        <div class="result-card-title">💬 Key Messages to Communicate</div>
+        <div id="res-messages" class="result-tags"></div>
+      </div>
+      <div class="result-grid">
+        <div class="result-card">
+          <div class="result-card-title">📣 Best Marketing Channels</div>
+          <div id="res-channels" class="result-tags"></div>
+        </div>
+        <div class="result-card">
+          <div class="result-card-title">🏆 Your Competitive Advantage</div>
+          <div class="result-card-content" id="res-advantage"></div>
+        </div>
+      </div>
+      <div class="result-card">
+        <div class="result-card-title">💡 Content Ideas</div>
+        <div id="res-content" class="result-tags"></div>
+      </div>
+      <div class="result-card" style="border-color:rgba(0,217,245,0.2)">
+        <div class="result-card-title">📅 Your 30-Day Action Plan</div>
+        <div id="res-plan"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CHATBOT SETUP PAGE ===== -->
+<div class="page" id="page-chatbot">
+  <div class="tool-page">
+    <div class="tool-page-header">
+      <div class="tool-badge" style="background:rgba(0,217,245,0.1);color:#00d9f5;border:1px solid rgba(0,217,245,0.25)">💬 AI Chatbot</div>
+      <h1>Your AI Customer Service Bot</h1>
+      <p>Set up your chatbot and get a single line of code to add it to ANY website — or test it right here!</p>
+    </div>
+
+    <!-- Tab switcher -->
+    <div class="log-tabs" style="margin-bottom:1.5rem">
+      <button class="log-tab active" onclick="switchChatTab('test', event)">🧪 Test Chatbot</button>
+      <button class="log-tab" onclick="switchChatTab('embed', event)">🌐 Get Embed Code</button>
+      <button class="log-tab" onclick="switchChatTab('telegram', event)">✈️ Telegram Bot</button>
+    </div>
+
+    <!-- TEST TAB -->
+    <div id="chat-tab-test">
+      <div class="business-setup">
+        <h3>⚙️ Tell the AI about your business</h3>
+        <textarea class="field-input" id="chatbot-business-info" placeholder="e.g. We are Miami Hair Studio, a natural hair salon in Miami Beach. We're open Mon-Sat 9am-7pm. Services include braids ($80+), locs ($120+), and natural styles ($60+). Book at miamihair.com or call 305-555-0100." style="min-height:100px"></textarea>
+        <button class="btn-electric" style="margin-top:1rem;width:auto;padding:0.6rem 1.5rem;font-size:0.9rem" onclick="setupChatbot()">✅ Save & Start Chatting</button>
+      </div>
+      <div class="chat-container">
+        <div class="chat-header">
+          <div class="chat-avatar">🤖</div>
+          <div>
+            <div class="chat-name">AutoPulse Bot</div>
+            <div class="chat-status">● Online — Ready to help</div>
+          </div>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+          <div class="chat-msg bot"><div class="chat-bubble">👋 Hi! I'm your AI assistant. Set up your business info above, then ask me anything your customers might ask!</div></div>
+        </div>
+        <div class="chat-input-row">
+          <input class="chat-input" id="chat-input" type="text" placeholder="Type a message..." onkeypress="if(event.key==='Enter')sendChat()"/>
+          <button class="chat-send" onclick="sendChat()">Send →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- EMBED TAB -->
+    <div id="chat-tab-embed" style="display:none">
+      <div class="form-card">
+        <div class="field-group">
+          <label class="field-label">Bot Name</label>
+          <input class="field-input" id="embed-name" type="text" placeholder="e.g. John's Assistant" value="AI Assistant"/>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Your Business Info</label>
+          <textarea class="field-input" id="embed-info" placeholder="e.g. We are John's Pizza, open daily 11am-10pm, delivery available, call 305-555-0100"></textarea>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Chat Bubble Color</label>
+          <input type="color" id="embed-color" value="#00f5a0" style="width:60px;height:40px;border:none;border-radius:8px;cursor:pointer;background:none"/>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Welcome Message</label>
+          <input class="field-input" id="embed-welcome" type="text" value="Hi! 👋 How can I help you today?"/>
+        </div>
+        <button class="btn-generate" onclick="generateEmbedCode()">🔧 Generate My Embed Code</button>
+      </div>
+
+      <div id="embed-result" style="display:none">
+        <div class="result-card" style="border-color:rgba(0,245,160,0.3)">
+          <div class="result-card-title">✅ YOUR EMBED CODE — Copy & paste into your website</div>
+          <pre id="embed-code" style="background:var(--surface);padding:1rem;border-radius:10px;font-size:0.8rem;overflow-x:auto;color:var(--electric);white-space:pre-wrap;margin-top:0.5rem"></pre>
+          <button class="btn-electric" style="margin-top:1rem;padding:0.6rem 1.5rem;font-size:0.9rem" onclick="copyEmbedCode()">📋 Copy Code</button>
+        </div>
+        <div class="result-card" style="margin-top:1rem">
+          <div class="result-card-title">📖 HOW TO ADD IT TO YOUR WEBSITE</div>
+          <div class="result-card-content" style="font-size:0.88rem;line-height:1.8">
+            1. Copy the code above<br>
+            2. Open your website editor (Wix, Squarespace, WordPress, etc.)<br>
+            3. Find the option to add "Custom Code" or "HTML"<br>
+            4. Paste the code there<br>
+            5. Save — your chatbot appears instantly! 🎉
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TELEGRAM TAB -->
+    <div id="chat-tab-telegram" style="display:none">
+      <div class="form-card">
+        <div class="result-card" style="border-color:rgba(0,217,245,0.2);margin-bottom:1.5rem">
+          <div class="result-card-title">✈️ HOW TO SET UP YOUR TELEGRAM BOT</div>
+          <div class="result-card-content" style="font-size:0.88rem;line-height:2">
+            <strong>Step 1:</strong> Open Telegram and search for <strong>@BotFather</strong><br>
+            <strong>Step 2:</strong> Send <strong>/newbot</strong> — follow the steps, get your bot token<br>
+            <strong>Step 3:</strong> Paste your token below and save<br>
+            <strong>Step 4:</strong> Add your business info<br>
+            <strong>Step 5:</strong> Your bot is live! Share your bot link with customers 🎉
+          </div>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Your Telegram Bot Token</label>
+          <input class="field-input" id="tg-token" type="text" placeholder="e.g. 123456789:ABCdefGHIjklMNOpqrSTUvwxYZ"/>
+        </div>
+        <div class="field-group">
+          <label class="field-label">Your Business Info</label>
+          <textarea class="field-input" id="tg-info" placeholder="e.g. We are John's Pizza, open daily 11am-10pm..." style="min-height:80px"></textarea>
+        </div>
+        <button class="btn-generate" onclick="saveTelegramBot()" style="background:linear-gradient(135deg,#00d9f5,#00f5a0)">✈️ Activate My Telegram Bot</button>
+        <div id="tg-result" style="display:none;margin-top:1.5rem;padding:1rem;background:rgba(0,245,160,0.1);border:1px solid rgba(0,245,160,0.3);border-radius:12px;color:var(--electric);font-weight:600;text-align:center">
+          ✅ Telegram Bot Activated! Your customers can now chat with your bot!
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- SIGNUP MODAL -->
+<div class="modal-overlay" id="modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="modal-form-view">
+      <h2>Get Started</h2>
+      <p>You're one step away from putting your business on autopilot.</p>
+      <div class="modal-plan-badge">Selected Plan: <strong id="modal-plan-name">Growth — $79/mo</strong></div>
+      <form onsubmit="handleSignup(event)">
+        <input type="text" placeholder="Your full name" required/>
+        <input type="email" placeholder="Your email address" required/>
+        <input type="text" placeholder="Business name"/>
+        <button type="submit" class="modal-submit">Create My Account →</button>
+        <p style="text-align:center;font-size:0.75rem;color:var(--muted);margin-top:-0.5rem">7-day free trial · No credit card required</p>
+      </form>
+    </div>
+    <div class="success-screen" id="modal-success">
+      <div class="success-icon">🚀</div>
+      <h3>You're In!</h3>
+      <p>Welcome to AutoPulse! Check your email for your login link.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Check URL params
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('connected') === 'true') {
+    showDashboard();
+    document.getElementById('view-connect').style.display = 'none';
+    document.getElementById('view-connected').style.display = 'block';
+  }
+  if (params.get('error')) {
+    showDashboard();
+    alert('Could not connect Gmail. Please try again.');
+  }
+
+  function showLanding() {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-landing').classList.add('active');
+    window.scrollTo(0,0);
+  }
+
+  function showDashboard() { showPage('dashboard'); }
+
+  function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + id).classList.add('active');
+    window.scrollTo(0,0);
+    // Handle dashboard connected state
+    if (id === 'dashboard') {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('connected') === 'true' || document.getElementById('view-connected').style.display === 'block') {
+        document.getElementById('view-connect').style.display = 'none';
+        document.getElementById('view-connected').style.display = 'block';
+      }
+    }
+  }
+
+  // ===== BRAND STRATEGIST =====
+  async function generateStrategy() {
+    const business = document.getElementById('bs-business').value.trim();
+    const customers = document.getElementById('bs-customers').value.trim();
+    if (!business || !customers) { alert('Please fill in at least your business description and target customers!'); return; }
+    const btn = document.getElementById('bs-btn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Generating your strategy...';
+    try {
+      const res = await fetch('/brand-strategy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          business, customers,
+          competitors: document.getElementById('bs-competitors').value,
+          difference: document.getElementById('bs-difference').value,
+          goal: document.getElementById('bs-goal').value,
+        })
+      });
+      if (!res.ok) throw new Error('Server error ' + res.status);
+      const data = await res.json();
+      if (data.error) { alert('Error generating strategy. Please try again.'); return; }
+      document.getElementById('res-voice').textContent = data.brandVoice || '';
+      document.getElementById('res-audience').textContent = data.targetAudience || '';
+      document.getElementById('res-advantage').textContent = data.competitiveAdvantage || '';
+      document.getElementById('res-taglines').innerHTML = (data.taglines || []).map(t => `<span class="result-tag" style="color:var(--electric);border-color:rgba(0,245,160,0.3)">"${t}"</span>`).join('');
+      document.getElementById('res-messages').innerHTML = (data.keyMessages || []).map(m => `<span class="result-tag">→ ${m}</span>`).join('');
+      document.getElementById('res-channels').innerHTML = (data.marketingChannels || []).map(c => `<span class="result-tag">📣 ${c}</span>`).join('');
+      document.getElementById('res-content').innerHTML = (data.contentIdeas || []).map(i => `<span class="result-tag">💡 ${i}</span>`).join('');
+      document.getElementById('res-plan').innerHTML = (data.thirtyDayPlan || []).map((action, i) => `<div class="week-item"><span class="week-num">W${i+1}</span><span>${action}</span></div>`).join('');
+      document.getElementById('strategy-results').classList.add('show');
+      document.getElementById('strategy-results').scrollIntoView({ behavior: 'smooth' });
+    } catch(e) { alert('Something went wrong. Please try again.'); }
+    btn.disabled = false;
+    btn.textContent = '🎯 Generate My Brand Strategy';
+  }
+
+  // ===== CHATBOT =====
+  let chatHistory = [];
+  let chatBusinessInfo = '';
+
+  function switchChatTab(tab, e) {
+    document.querySelectorAll('.log-tab').forEach(b => b.classList.remove('active'));
+    if (e && e.target) e.target.classList.add('active');
+    document.getElementById('chat-tab-test').style.display = tab === 'test' ? 'block' : 'none';
+    document.getElementById('chat-tab-embed').style.display = tab === 'embed' ? 'block' : 'none';
+    document.getElementById('chat-tab-telegram').style.display = tab === 'telegram' ? 'block' : 'none';
+  }
+
+  function generateEmbedCode() {
+    const name = document.getElementById('embed-name').value || 'AI Assistant';
+    const info = document.getElementById('embed-info').value || '';
+    const color = document.getElementById('embed-color').value || '#00f5a0';
+    const welcome = document.getElementById('embed-welcome').value || 'Hi! 👋 How can I help you today?';
+    const code = `<!-- AutoPulse AI Chatbot -->
+<script>
+  window.AutoPulseConfig = {
+    botName: "${name}",
+    businessInfo: "${info.replace(/"/g, "'")}",
+    color: "${color}",
+    welcomeMessage: "${welcome}"
+  };
+</script>
+<script src="https://autopulse-ai.netlify.app/widget.js"></script>`;
+    document.getElementById('embed-code').textContent = code;
+    document.getElementById('embed-result').style.display = 'block';
+    document.getElementById('embed-result').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  function copyEmbedCode() {
+    const code = document.getElementById('embed-code').textContent;
+    navigator.clipboard.writeText(code).then(() => alert('✅ Code copied! Paste it into your website.'));
+  }
+
+  async function saveTelegramBot() {
+    const token = document.getElementById('tg-token').value.trim();
+    const info = document.getElementById('tg-info').value.trim();
+    if (!token) { alert('Please enter your Telegram bot token!'); return; }
+    try {
+      const webhookUrl = 'https://autopulse-ai.netlify.app/telegram-webhook';
+      const res = await fetch(`https://api.telegram.org/bot${token}/setWebhook`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: webhookUrl })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        document.getElementById('tg-result').style.display = 'block';
+      } else {
+        alert('Error: ' + (data.description || 'Invalid token. Please check and try again.'));
+      }
+    } catch(e) {
+      alert('Something went wrong. Please check your token and try again.');
+    }
+  }
+
+  
+    chatBusinessInfo = document.getElementById('chatbot-business-info').value.trim();
+    if (!chatBusinessInfo) { alert('Please enter your business info first!'); return; }
+    chatHistory = [];
+    document.getElementById('chat-messages').innerHTML = `<div class="chat-msg bot"><div class="chat-bubble">✅ Got it! I'm now set up as your business assistant. Try asking me what your customers would ask!</div></div>`;
+    alert('✅ Business info saved! Now type a message below and click Send.');
+  }
+
+  async function sendChat() {
+    const input = document.getElementById('chat-input');
+    const message = input.value.trim();
+    if (!message) return;
+    if (!chatBusinessInfo) {
+      chatBusinessInfo = document.getElementById('chatbot-business-info').value.trim() || 'A helpful business assistant.';
+    }
+    const messages = document.getElementById('chat-messages');
+    messages.innerHTML += `<div class="chat-msg user"><div class="chat-bubble">${message}</div></div>`;
+    input.value = '';
+    const typingId = 'typing-' + Date.now();
+    messages.innerHTML += `<div class="chat-msg bot" id="${typingId}"><div class="chat-bubble" style="color:var(--muted)">Typing...</div></div>`;
+    messages.scrollTop = messages.scrollHeight;
+    try {
+      const res = await fetch('/chatbot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, businessInfo: chatBusinessInfo, history: chatHistory })
+      });
+      if (!res.ok) throw new Error('Server error ' + res.status);
+      const data = await res.json();
+      const reply = data.reply || 'Sorry, I could not process that.';
+      chatHistory.push({ role: 'user', content: message });
+      chatHistory.push({ role: 'assistant', content: reply });
+      document.getElementById(typingId)?.remove();
+      messages.innerHTML += `<div class="chat-msg bot"><div class="chat-bubble">${reply}</div></div>`;
+    } catch(e) {
+      document.getElementById(typingId)?.remove();
+      messages.innerHTML += `<div class="chat-msg bot"><div class="chat-bubble" style="color:var(--pink)">Sorry, something went wrong: ${e.message}</div></div>`;
+    }
+    messages.scrollTop = messages.scrollHeight;
+  }
+
+  
+
+  function connectGmail() {
+    window.location.href = '/gmail-auth';
+  }
+
+  async function scanEmails() {
+    const btn = document.getElementById('scan-btn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Scanning...';
+
+    try {
+      const res = await fetch('/scan-emails', { credentials: 'include' });
+      const data = await res.json();
+
+      if (data.error) {
+        alert('Error: ' + data.error);
+        btn.disabled = false;
+        btn.textContent = '⚡ SCAN MY INBOX NOW';
+        return;
+      }
+
+      // Update stats
+      const prev = {
+        scanned: parseInt(document.getElementById('stat-scanned').textContent) || 0,
+        deleted: parseInt(document.getElementById('stat-deleted').textContent) || 0,
+        replied: parseInt(document.getElementById('stat-replied').textContent) || 0,
+      };
+      document.getElementById('stat-scanned').textContent = prev.scanned + data.scanned;
+      document.getElementById('stat-deleted').textContent = prev.deleted + data.deleted;
+      document.getElementById('stat-replied').textContent = prev.replied + data.replied;
+
+      // Update log
+      const log = document.getElementById('activity-log');
+      if (data.log && data.log.length > 0) {
+        // Save deleted ones to history
+        data.log.forEach(item => {
+          if (item.action.includes('Deleted')) {
+            saveDeletedEmail(item.subject, item.from);
+          }
+        });
+        const items = data.log.map(item => `
+          <div class="log-item ${item.action.includes('Deleted') ? 'deleted' : ''}">
+            <div style="flex:1">
+              <div style="font-weight:600">${item.subject}</div>
+              <div class="log-from">${item.from}</div>
+              ${item.reply ? `<div style="margin-top:0.5rem;padding:0.5rem;background:var(--surface2);border-radius:8px;font-size:0.8rem;color:var(--muted);border-left:3px solid var(--electric)">💬 Replied: "${item.reply.substring(0, 120)}${item.reply.length > 120 ? '...' : ''}"</div>` : ''}
+            </div>
+            <div class="log-action" style="margin-left:1rem">${item.action}</div>
+          </div>
+        `).join('');
+        log.innerHTML = items + log.innerHTML;
+      } else {
+        log.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted);font-size:0.9rem">No new emails found.</div>';
+      }
+
+    } catch(e) {
+      alert('Scan failed. Make sure your Gmail is connected.');
+    }
+
+    btn.disabled = false;
+    btn.textContent = '⚡ SCAN MY INBOX NOW';
+  }
+
+  function switchLogTab(tab) {
+    document.querySelectorAll('.log-tab').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('log-session').style.display = tab === 'session' ? 'block' : 'none';
+    document.getElementById('log-deleted').style.display = tab === 'deleted' ? 'block' : 'none';
+    if (tab === 'deleted') renderDeletedHistory();
+  }
+
+  function getDeletedHistory() {
+    try { return JSON.parse(localStorage.getItem('ap_deleted') || '[]'); } catch(e){ return []; }
+  }
+
+  function saveDeletedEmail(subject, from) {
+    const history = getDeletedHistory();
+    history.unshift({ subject, from, date: new Date().toLocaleString() });
+    if (history.length > 200) history.splice(200);
+    localStorage.setItem('ap_deleted', JSON.stringify(history));
+  }
+
+  function clearDeletedHistory() {
+    if (confirm('Clear all deleted email history?')) {
+      localStorage.removeItem('ap_deleted');
+      renderDeletedHistory();
+    }
+  }
+
+  function renderDeletedHistory() {
+    const history = getDeletedHistory();
+    const el = document.getElementById('deleted-log');
+    if (history.length === 0) {
+      el.innerHTML = '<div style="text-align:center;padding:2rem;color:var(--muted);font-size:0.9rem">No deleted emails yet. Run a scan to start!</div>';
+      return;
+    }
+    el.innerHTML = history.map(item => `
+      <div class="log-item deleted">
+        <div>
+          <div style="font-weight:600">${item.subject}</div>
+          <div class="log-from">${item.from}</div>
+          <div class="log-date">${item.date}</div>
+        </div>
+        <div class="log-action" style="color:#f72585">🗑️ Deleted (scam)</div>
+      </div>
+    `).join('');
+  }
+
+  function openModal(plan) {
+    document.getElementById('modal-plan-name').textContent = plan;
+    document.getElementById('modal').classList.add('open');
+    document.getElementById('modal-form-view').style.display = 'block';
+    document.getElementById('modal-success').classList.remove('show');
+  }
+  function closeModal() { document.getElementById('modal').classList.remove('open'); }
+  function handleSignup(e) {
+    e.preventDefault();
+    document.getElementById('modal-form-view').style.display = 'none';
+    document.getElementById('modal-success').classList.add('show');
+  }
+
+  // Scroll animations
+  const obs = new IntersectionObserver(entries => {
+    entries.forEach(e => { if(e.isIntersecting){ e.target.style.opacity='1'; e.target.style.transform='translateY(0)'; } });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.tool-card, .price-card, .step').forEach(el => {
+    el.style.opacity='0'; el.style.transform='translateY(20px)'; el.style.transition='opacity 0.5s ease, transform 0.5s ease';
+    obs.observe(el);
+  });
+</script>
+</body>
+</html>
